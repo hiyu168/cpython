@@ -1,45 +1,52 @@
 import http.server
 import socketserver
 import unittest
+import threading
+import time
+import http.client
 
 class TestHTTPServer(unittest.TestCase):
 
+    def setUp(self):
+        # Start the server in a separate thread
+        self.PORT = 8000
+        self.handler = http.server.SimpleHTTPRequestHandler
+        self.httpd = socketserver.TCPServer(("", self.PORT), self.handler)
+        self.server_thread = threading.Thread(target=self.httpd.serve_forever)
+        self.server_thread.daemon = True
+        self.server_thread.start()
+        time.sleep(1)  # Allow some time for the server to start
+
+    def tearDown(self):
+        # Shutdown the server and close the thread
+        self.httpd.shutdown()
+        self.server_thread.join()
+
     def test_server_start(self):
-        PORT = 8000
-        handler = http.server.SimpleHTTPRequestHandler
-        with socketserver.TCPServer(("", PORT), handler) as httpd:
-            self.assertIsInstance(httpd, socketserver.TCPServer)
+        self.assertTrue(self.server_thread.is_alive())
 
     def test_response_code(self):
-        PORT = 8000
-        handler = http.server.SimpleHTTPRequestHandler
-        with socketserver.TCPServer(("", PORT), handler) as httpd:
-            response = http.client.HTTPConnection('localhost', PORT)
-            response.request('GET', '/')
-            res = response.getresponse()
-            self.assertEqual(res.status, 200)
+        connection = http.client.HTTPConnection('localhost', self.PORT)
+        connection.request('GET', '/')
+        response = connection.getresponse()
+        self.assertEqual(response.status, 200)
+        connection.close()
 
     def test_file_serving(self):
-        # Assuming the server serves files from the current directory
-        PORT = 8000
-        handler = http.server.SimpleHTTPRequestHandler
-        with socketserver.TCPServer(("", PORT), handler) as httpd:
-            response = http.client.HTTPConnection('localhost', PORT)
-            response.request('GET', '/index.html')
-            res = response.getresponse()
-            self.assertEqual(res.status, 200)
+        connection = http.client.HTTPConnection('localhost', self.PORT)
+        connection.request('GET', '/index.html')  # Assuming index.html exists
+        response = connection.getresponse()
+        self.assertEqual(response.status, 200)
+        connection.close()
 
     def test_404(self):
-        PORT = 8000
-        handler = http.server.SimpleHTTPRequestHandler
-        with socketserver.TCPServer(("", PORT), handler) as httpd:
-            response = http.client.HTTPConnection('localhost', PORT)
-            response.request('GET', '/non_existent_file')
-            res = response.getresponse()
-            self.assertEqual(res.status, 404)
+        connection = http.client.HTTPConnection('localhost', self.PORT)
+        connection.request('GET', '/non_existent_file')
+        response = connection.getresponse()
+        self.assertEqual(response.status, 404)
+        connection.close()
 
     def test_server_shutdown(self):
-        PORT = 8000
-        handler = http.server.SimpleHTTPRequestHandler
-        with socketserver.TCPServer(("", PORT), handler) as httpd:
-            self.assertIsNone(httpd.shutdown())
+        # This test checks if the server can be shutdown properly.
+        self.httpd.shutdown()
+        self.assertFalse(self.server_thread.is_alive())
