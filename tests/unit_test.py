@@ -8,26 +8,35 @@ import http.client
 
 class TestHTTPServer(unittest.TestCase):
 
-   def setUp(self):
+    def setUp(self):
         # Create a temporary directory and add an index.html file
         self.temp_dir = TemporaryDirectory()
         with open(os.path.join(self.temp_dir.name, "index.html"), "w") as f:
             f.write("<html><body><h1>Test Index Page</h1></body></html>")
 
+        # Store the original working directory
+        self.original_dir = os.getcwd()
+
         # Start the server in a separate thread with a random available port
         self.handler = http.server.SimpleHTTPRequestHandler
-        os.chdir(self.temp_dir.name)  # Change to the temp directory
+        os.chdir(self.temp_dir.name)  # Change to the temp directory to serve files
         self.httpd = socketserver.TCPServer(("", 0), self.handler)  # Bind to a random available port
         self.PORT = self.httpd.server_address[1]  # Get the port assigned by the OS
         self.server_thread = threading.Thread(target=self.httpd.serve_forever)
         self.server_thread.daemon = True
         self.server_thread.start()
-        time.sleep(1)  # Allow more time for the server to start
+        time.sleep(1)  # Allow some time for the server to start
 
     def tearDown(self):
         # Shutdown the server and close the thread
         self.httpd.shutdown()
         self.server_thread.join()
+
+        # Restore the original working directory
+        os.chdir(self.original_dir)
+
+        # Clean up the temporary directory
+        self.temp_dir.cleanup()
 
     def test_server_start(self):
         self.assertTrue(self.server_thread.is_alive())
