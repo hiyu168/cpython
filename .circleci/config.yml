@@ -51,7 +51,7 @@ jobs:
           name: Deploy
           command: |
             mkdir -p DEPLOY-$(date +%F)
-            rsync -av --exclude "DEPLOY-$(date +%F)" ./ DEPLOY-$(date +%F)          - .
+            rsync -av --exclude "DEPLOY-$(date +%F)" ./ DEPLOY-$(date +%F)- .
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/workflows/ & https://circleci.com/docs/configuration-reference/#workflows
