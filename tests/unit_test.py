@@ -11,7 +11,7 @@ class TestHTTPServer(unittest.TestCase):
         # Start the server in a separate thread
         self.PORT = 8000
         self.handler = http.server.SimpleHTTPRequestHandler
-        self.httpd = socketserver.TCPServer(("", self.PORT), self.handler)
+        self.httpd = socketserver.TCPServer(("", 0), self.handler)  # Bind to a random available port
         self.server_thread = threading.Thread(target=self.httpd.serve_forever)
         self.server_thread.daemon = True
         self.server_thread.start()
