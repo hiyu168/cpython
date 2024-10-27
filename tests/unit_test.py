@@ -5,6 +5,7 @@ import unittest
 import threading
 import time
 import http.client
+from tempfile import TemporaryDirectory
 
 class TestHTTPServer(unittest.TestCase):
 
