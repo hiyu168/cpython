@@ -1,3 +1,4 @@
+
 import http.server
 import socketserver
 import unittest
@@ -8,14 +9,14 @@ import http.client
 class TestHTTPServer(unittest.TestCase):
 
     def setUp(self):
-        # Start the server in a separate thread
-        self.PORT = 8000
+        # Start the server in a separate thread with a random available port
         self.handler = http.server.SimpleHTTPRequestHandler
         self.httpd = socketserver.TCPServer(("", 0), self.handler)  # Bind to a random available port
+        self.PORT = self.httpd.server_address[1]  # Get the port assigned by the OS
         self.server_thread = threading.Thread(target=self.httpd.serve_forever)
         self.server_thread.daemon = True
         self.server_thread.start()
-        time.sleep(1)  # Allow some time for the server to start
+        time.sleep(2)  # Allow more time for the server to start
 
     def tearDown(self):
         # Shutdown the server and close the thread
@@ -26,27 +27,26 @@ class TestHTTPServer(unittest.TestCase):
         self.assertTrue(self.server_thread.is_alive())
 
     def test_response_code(self):
-        connection = http.client.HTTPConnection('localhost', self.PORT)
+        connection = http.client.HTTPConnection('127.0.0.1', self.PORT)  # Use 127.0.0.1 instead of localhost
         connection.request('GET', '/')
         response = connection.getresponse()
         self.assertEqual(response.status, 200)
         connection.close()
 
     def test_file_serving(self):
-        connection = http.client.HTTPConnection('localhost', self.PORT)
+        connection = http.client.HTTPConnection('127.0.0.1', self.PORT)  # Use 127.0.0.1 instead of localhost
         connection.request('GET', '/index.html')  # Assuming index.html exists
         response = connection.getresponse()
         self.assertEqual(response.status, 200)
         connection.close()
 
     def test_404(self):
-        connection = http.client.HTTPConnection('localhost', self.PORT)
+        connection = http.client.HTTPConnection('127.0.0.1', self.PORT)  # Use 127.0.0.1 instead of localhost
         connection.request('GET', '/non_existent_file')
         response = connection.getresponse()
         self.assertEqual(response.status, 404)
         connection.close()
 
     def test_server_shutdown(self):
-        # This test checks if the server can be shutdown properly.
         self.httpd.shutdown()
         self.assertFalse(self.server_thread.is_alive())
